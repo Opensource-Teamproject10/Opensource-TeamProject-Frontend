@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import axios from "axios";
+
 import image5 from "./images/image-5.png";
 import image17 from "./images/image-17.png";
 import image18 from "./images/image-18.png";
@@ -34,15 +36,52 @@ const foodOptions = [
   { id: 5, label: "디저트", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", image: image1 },
 ];
 
-export const Frame = () => {
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedMood, setSelectedMood] = useState(null);
-  const [selectedFood, setSelectedFood] = useState(null);
+const handleSearch = () => {
+  if (!searchValue) {
+    alert("지역을 입력하세요!");
+    return;
+  }
+
+  axios
+    .post("http://localhost:8081/api/location", { location: searchValue })
+    .then(() => {
+      console.log("✅ 지역 저장 완료:", searchValue);
+      alert("✅ 입력되었습니다!");   // ✅ 여기 추가
+    })
+    .catch((err) => {
+      console.error("❌ 지역 저장 실패", err);
+      alert("❌ 저장 실패! 다시 시도해주세요.");
+    });
+};
+
+  const trySaveMoodAndFood = () => {
+    if (!selectedMood || !selectedFood) return;
+
+    const moodLabel = moodOptions.find((m) => m.id === selectedMood)?.label;
+    const foodLabel = foodOptions.find((f) => f.id === selectedFood)?.label;
+
+    axios
+      .post("http://localhost:8081/api/mood", {
+        feeling: moodLabel,
+        food: foodLabel,
+        location: searchValue,
+      })
+      .then(() => console.log(`✅ 저장 완료: ${moodLabel}, ${foodLabel}, ${searchValue}`))
+      .catch((err) => console.error("❌ 저장 실패", err));
+  };
+
+  const handleMoodSelect = (mood) => {
+    setSelectedMood(mood.id);
+    trySaveMoodAndFood();
+  };
+
+  const handleFoodSelect = (food) => {
+    setSelectedFood(food.id);
+    trySaveMoodAndFood();
+  };
 
   return (
     <div className="min-h-screen w-full bg-[linear-gradient(160deg,rgba(250,245,233,1)_0%),linear-gradient(0deg,rgba(255,255,255,1)_0%,rgba(255,255,255,1)_100%)]">
-
-      {/* HEADER */}
       <header className="w-full h-[69px] flex items-center bg-[#b69f7c] border-b shadow">
         <div className="max-w-[1200px] w-full mx-auto flex justify-between items-center px-5">
           <div className="flex items-center gap-3">
@@ -58,15 +97,12 @@ export const Frame = () => {
         </div>
       </header>
 
-      {/* BODY */}
       <div className="flex justify-center mt-10 px-3">
         <div className="w-full max-w-[1100px] space-y-16">
 
-          {/* 검색 */}
+          {/* ✅ 검색 버튼: location 저장 */}
           <section className="bg-white border rounded-2xl shadow p-8">
-            <h2 className="text-[#b69f7c] text-xl font-bold mb-4">
-              어디서 식사하실 건가요?
-            </h2>
+            <h2 className="text-[#b69f7c] text-xl font-bold mb-4">어디서 식사하실 건가요?</h2>
             <div className="flex gap-3">
               <input
                 type="text"
@@ -75,13 +111,16 @@ export const Frame = () => {
                 placeholder="지역을 검색하세요 (예: 강남, 홍대, 신촌)"
                 className="flex-1 border border-gray-300 rounded-md px-3 py-2"
               />
-              <button className="w-[140px] bg-[#b69f7c] text-white rounded-md">
+              <button
+                className="w-[140px] bg-[#b69f7c] text-white rounded-md"
+                onClick={handleSearch}
+              >
                 검색
               </button>
             </div>
           </section>
 
-          {/* 기분 선택 */}
+          {/* ✅ 기분 선택 */}
           <section className="bg-white border rounded-3xl shadow p-10">
             <h2 className="text-center text-[#a78c63] text-2xl font-bold mb-10">
               지금 기분이 어떠세요?
@@ -91,7 +130,7 @@ export const Frame = () => {
               {moodOptions.map((mood) => (
                 <button
                   key={mood.id}
-                  onClick={() => setSelectedMood(mood.id)}
+                  onClick={() => handleMoodSelect(mood)}
                   className={`
                     w-full max-w-[220px] h-28 flex flex-col justify-center items-center
                     ${mood.bgColor} ${mood.borderColor} border-2 rounded-xl
@@ -106,7 +145,7 @@ export const Frame = () => {
             </div>
           </section>
 
-          {/* ✅ 음식 선택 (추가된 부분) */}
+          {/* ✅ 음식 선택 */}
           <section className="bg-white border rounded-3xl shadow p-10">
             <h2 className="text-center text-[#a78c63] text-2xl font-bold mb-10">
               어떤 음식이 드시고 싶나요?
@@ -116,7 +155,7 @@ export const Frame = () => {
               {foodOptions.map((food) => (
                 <button
                   key={food.id}
-                  onClick={() => setSelectedFood(food.id)}
+                  onClick={() => handleFoodSelect(food)}
                   className={`
                     w-full max-w-[200px] h-32 flex flex-col justify-center items-center
                     ${food.bgColor} ${food.borderColor} border-2 rounded-xl
