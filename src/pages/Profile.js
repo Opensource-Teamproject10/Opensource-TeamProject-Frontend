@@ -1,5 +1,9 @@
 import React, { useState } from "react";
+<<<<<<< HEAD
+import image2 from "../images/home.png";
+=======
 import image2 from "../images/Home.png";
+>>>>>>> 05db3edffc1f95edb884afed8d9eeca04b3a3176
 import image from "../images/Profile.png";
 import { Link, useNavigate } from "react-router-dom";
 
