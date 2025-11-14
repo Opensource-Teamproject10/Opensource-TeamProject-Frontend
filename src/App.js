@@ -5,9 +5,6 @@ import Menu from "./pages/Menu";
 import { SelectFeel } from "./pages/SelectFeel";
 import { ElementMainScreenHtml } from "./pages/ReviewProfile";
 
-
-
-
 function App() {
   return (
     <Router>
