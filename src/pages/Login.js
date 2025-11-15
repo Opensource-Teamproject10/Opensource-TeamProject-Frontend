@@ -12,6 +12,7 @@ import vector4 from "../images/Google.svg";
 import vector8 from "../images/Signin.svg";
 import vector from "../images/Background.png";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/axiosConfig"; // 'axios' 대신 'api' 사용
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -31,15 +32,45 @@ export const Login = () => {
     { icon: image, text: "개인화된 맛집 추천" },
     { icon: image, text: "실시간 맛집 정보" },
   ];
+// --- (수정 2) handleLogin이 event 객체 'e'를 받도록 수정 ---
+  const handleLogin = async (e) => {
+    // --- (수정 3) 페이지 새로고침(기본 동작) 방지 ---
+    e.preventDefault(); 
+    try {
+        // --- (수정 4) 'axios.post' -> 'api.post'로 변경 ---
+        // 'api' 인스턴스에 baseURL("http://localhost:8081")이 설정되어 있으므로
+        // URL 경로만 적어줍니다.
+        const response = await api.post("/api/user/login", {
+          email,    
+          password, 
+        });
 
-  const handleLogin = () => {
-    // 아주 간단한 검증 예시
-    if (email === '123@admin.com' && password === '1234') {
-      alert('로그인 성공!');
-      navigate('/Profile'); // /main 페이지로 이동
-    } else {
-      alert('아이디나 비밀번호가 올바르지 않습니다.');
+        // 3. 응답 데이터에서 'token'을 추출합니다.
+        const { token } = response.data;
+
+        if (token) {
+            // 4. 토큰을 localStorage에 저장합니다.
+            localStorage.setItem("token", token);
+            
+            alert("로그인 성공!");
+            navigate("/SelectFeel"); // 메인 페이지로 이동
+        }
+
+    } catch (error) {
+        console.error("Login error: ", error);
+        
+        // 5. 서버에서 보낸 에러 메시지를 표시합니다.
+        if (error.response && error.response.status === 401) {
+            // (401은 저희가 백엔드에서 설정한 "Unauthorized"입니다)
+            alert(error.response.data); // "이메일 또는 비밀번호가 일치하지 않습니다."
+        } else {
+            alert("로그인에 실패했습니다.");
+        }
     }
+  };
+
+  const handleSignup = () => {
+    navigate("/Register"); // 회원가입 페이지로 이동
   };
 
   // 핸들러 함수들은 그대로 유지
@@ -47,7 +78,7 @@ export const Login = () => {
   const handleForgotPassword = (e) => e.preventDefault();
   const handleGoogleLogin = (e) => e.preventDefault();
   const handleKakaoLogin = (e) => e.preventDefault();
-  const handleSignup = (e) => e.preventDefault();
+  // const handleSignup = (e) => e.preventDefault();
 
   return (
     // ✨ 1. 고정 픽셀 크기 대신 min-h-screen과 flex를 사용
@@ -235,7 +266,7 @@ export const Login = () => {
             <button
               type="submit"
               className="all-[unset] box-border flex items-center justify-center bg-[#fbf6ec] w-full h-10 rounded-md cursor-pointer [font-family:'Roboto-Medium',Helvetica] font-medium text-[#b59f7e] text-base"
-              onClick={handleLogin}
+              // onClick={handleLogin}
             >
               로그인
             </button>
@@ -304,7 +335,7 @@ export const Login = () => {
             </button>
           </form>
           <footer className="self-center mt-6 [font-family:'Roboto-Regular',Helvetica] font-normal text-gray-500 text-sm">
-            무드푸드 © 2024
+            무드푸드 © 2025
           </footer>
         </div>
       </div>

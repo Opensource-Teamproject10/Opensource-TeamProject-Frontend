@@ -1,15 +1,24 @@
 import React, { useState } from "react";
 import image2 from "../images/Home.png";
 import image from "../images/Profile.png";
+import { Link, useNavigate } from "react-router-dom";
+import api from '../api/axiosConfig'; // 2. 이전에 만든 axios 인스턴스(api.js) 임포트
 
-export const Profile = () => {
+export const Register = () => {
+  const navigate = useNavigate();
+
+  // --- 3. (신규) 이메일, 비밀번호 state 추가 ---
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  // ---
+
   const [name, setName] = useState("");
   const [preferredArea, setPreferredArea] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState("");
 
   // ✨ 레이블을 명확하게 수정
-  const foodCategories = [
+  const foodType = [
     { id: "korean", label: "한식", icon: null },
     { id: "chinese", label: "중식", icon: null },
     { id: "japanese", label: "일식", icon: null },
@@ -32,14 +41,44 @@ export const Profile = () => {
     );
   };
 
-  const handleSubmit = () => {
-    console.log({
+
+  // --- 5. (수정) handleSubmit: 회원가입 로직으로 변경 ---
+  const handleSubmit = async () => {
+    // 6. 모든 필드 데이터 수집
+    const registrationData = {
+      email,
+      password,
       name,
       preferredArea,
-      selectedCategories,
-      selectedPriceRange,
-    });
+      selectedCategories, // 배열
+      selectedPriceRange, // 문자열
+    };
+
+    try {
+        // 7. '/api/user/register' 엔드포인트로 전송
+        const response = await api.post("/api/user/register", registrationData);
+
+        // 8. 서버로부터 받은 토큰 추출
+        const { token } = response.data;
+
+        if (token) {
+            // 9. 토큰을 localStorage에 저장 (자동 로그인)
+            localStorage.setItem("token", token);
+            alert("회원가입에 성공했습니다!");
+            navigate('/'); // 로그인 페이지로 돌아감
+        }
+
+    } catch (error) {
+        console.error("Registration error:", error);
+        if (error.response && error.response.status === 400) {
+            // 400 Bad Request (예: 이메일 중복)
+            alert(error.response.data); // "이미 가입된 이메일입니다."
+        } else {
+            alert("회원가입 중 오류가 발생했습니다.");
+        }
+    }
   };
+  // --- (handleSubmit 수정 끝) ---
 
   return (
     // ✨ 1. 절대 좌표/고정 크기 대신 flex-col과 min-h-screen 사용
@@ -86,6 +125,46 @@ export const Profile = () => {
           
           {/* --- 왼쪽 열 --- */}
           <div className="flex flex-col gap-8">
+            {/* --- 6. (신규) 이메일 필드 추가 --- */}
+            <section aria-label="이메일 입력">
+              <label
+                htmlFor="email-input"
+                className="block mb-3 [font-family:'Inter-Regular',Helvetica] font-normal text-[#fffbf2] text-2xl"
+              >
+                이메일 (로그인 ID)
+              </label>
+              <div className="w-full h-[57px] bg-[#faf5e9] rounded-[28.5px]">
+                <input
+                  id="email-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="이메일을 입력하세요."
+                  className="w-full h-full px-6 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-[#a28c6b] text-2xl tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-[#a78c63] rounded-[28.5px]"
+                  aria-required="true"
+                />
+              </div>
+            </section>
+            {/* --- 7. (신규) 비밀번호 필드 추가 --- */}
+            <section aria-label="비밀번호 입력">
+              <label
+                htmlFor="password-input"
+                className="block mb-3 [font-family:'Inter-Regular',Helvetica] font-normal text-[#fffbf2] text-2xl"
+              >
+                비밀번호
+              </label>
+              <div className="w-full h-[57px] bg-[#faf5e9] rounded-[28.5px]">
+                <input
+                  id="password-input"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="비밀번호를 입력하세요."
+                  className="w-full h-full px-6 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-[#a28c6b] text-2xl tracking-[0] leading-[normal] focus:outline-none focus:ring-2 focus:ring-[#a78c63] rounded-[28.5px]"
+                  aria-required="true"
+                />
+              </div>
+            </section>
             <section aria-label="이름 입력">
               <label
                 htmlFor="name-input"
@@ -131,7 +210,7 @@ export const Profile = () => {
               </p>
               {/* ✨ 6. 버그 수정: 중복 map 제거, absolute 대신 flex-wrap으로 자동 줄바꿈 */}
               <div className="flex flex-wrap gap-2">
-                {foodCategories.map((category) => {
+                {foodType.map((category) => {
                   const isSelected = selectedCategories.includes(category.id);
                   return (
                     <button
