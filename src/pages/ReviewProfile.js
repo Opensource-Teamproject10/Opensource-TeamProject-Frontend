@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-// 이미지들 (화질 깨짐 방지 위해 object-contain 적용할 예정)
+// restaurantApi가 axios 역할을 대신함
+import { api } from "../api/restaurantApi";
+
+// 이미지들
 import profileImg from "../images/profile-1.png";
 import homeIcon from "../images/home.png";
 import reviewsIcon from "../images/reviews.png";
@@ -13,6 +16,30 @@ import medalGold from "../images/gold.png";
 import medalPlatinum from "../images/platinum.png";
 
 export const ElementMainScreenHtml = () => {
+  const [data, setData] = useState(null);
+
+  // ---------------------------
+  // API 호출
+  // ---------------------------
+  useEffect(() => {
+    api
+      .get("/api/review-profile/1")
+      .then((res) => setData(res.data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // 로딩 UI
+  if (!data) {
+    return (
+      <p className="text-center mt-10 text-lg font-semibold">
+        불러오는 중...
+      </p>
+    );
+  }
+
+  // XP 퍼센트 계산
+  const xpPercent = Math.min((data.xp / 10000) * 100, 100);
+
   return (
     <div className="w-full min-h-screen bg-[#faf4e6] flex justify-center py-12 px-6 select-none">
 
@@ -20,11 +47,7 @@ export const ElementMainScreenHtml = () => {
 
         {/* ---------------------- 홈으로 ---------------------- */}
         <div className="flex items-center gap-3 mb-10">
-          <img
-            src={homeIcon}
-            alt="Home"
-            className="w-8 h-8 object-contain"
-          />
+          <img src={homeIcon} alt="Home" className="w-8 h-8 object-contain" />
           <span className="text-[20px] font-medium text-[#1a1a1a]">홈으로</span>
         </div>
 
@@ -39,28 +62,31 @@ export const ElementMainScreenHtml = () => {
 
           <div className="flex flex-col w-full">
 
-            {/* 이름 + 레벨 뱃지 */}
+            {/* 이름 + 레벨 */}
             <div className="flex items-center gap-3">
               <span className="text-[22px] font-semibold text-[#1a1a1a]">
-                김리뷰
+                {data.name}
               </span>
 
               <span className="bg-[#fe9a00] text-white px-3 py-1 text-sm rounded-full">
-                Gold Reviewer
+                {data.rankName || "Unranked"}
               </span>
             </div>
 
             <span className="text-[#6c6c6c] text-[15px] mt-1">
-              Level 18 · 7,850 / 10,000 XP
+              Level {data.level} · {data.xp} / 10,000 XP
             </span>
 
             {/* XP Bar */}
             <div className="w-full bg-[#f0d8a8] h-2 rounded-full mt-3">
-              <div className="bg-[#ffa800] h-full w-[78%] rounded-full"></div>
+              <div
+                className="bg-[#ffa800] h-full rounded-full"
+                style={{ width: `${xpPercent}%` }}
+              ></div>
             </div>
 
             <span className="text-[#e69900] text-[14px] mt-2">
-              다음 레벨까지 2,150 XP
+              다음 레벨까지 {10000 - data.xp} XP
             </span>
           </div>
         </div>
@@ -70,19 +96,19 @@ export const ElementMainScreenHtml = () => {
 
           <div className="bg-white rounded-xl shadow p-8 text-center hover:shadow-lg transition">
             <img src={reviewsIcon} className="w-16 h-16 mx-auto object-contain" />
-            <p className="text-[32px] font-semibold text-[#222] mt-4">247</p>
+            <p className="text-[32px] font-semibold text-[#222] mt-4">{data.reviewCount}</p>
             <p className="text-[#727272] text-[15px] mt-2">작성한 리뷰수</p>
           </div>
 
           <div className="bg-white rounded-xl shadow p-8 text-center hover:shadow-lg transition">
             <img src={likesIcon} className="w-16 h-16 mx-auto object-contain" />
-            <p className="text-[32px] font-semibold text-[#222] mt-4">1,823</p>
+            <p className="text-[32px] font-semibold text-[#222] mt-4">{data.likeCount}</p>
             <p className="text-[#727272] text-[15px] mt-2">받은 좋아요</p>
           </div>
 
           <div className="bg-white rounded-xl shadow p-8 text-center hover:shadow-lg transition">
             <img src={trustIcon} className="w-16 h-16 mx-auto object-contain" />
-            <p className="text-[32px] font-semibold text-[#222] mt-4">94%</p>
+            <p className="text-[32px] font-semibold text-[#222] mt-4">{data.trustScore}%</p>
             <p className="text-[#727272] text-[15px] mt-2">신뢰도 점수</p>
           </div>
 
@@ -125,7 +151,7 @@ export const ElementMainScreenHtml = () => {
         <div className="bg-[#fec000] rounded-xl shadow p-6 mt-10 flex items-center gap-4">
           <img src={medalGold} className="w-11 h-11 object-contain" />
           <div>
-            <p className="text-lg font-semibold text-white">Gold 등급</p>
+            <p className="text-lg font-semibold text-white">{data.rankName} 등급</p>
             <p className="text-sm text-white/90">전문성을 인정받은 상위 리뷰어</p>
           </div>
         </div>
