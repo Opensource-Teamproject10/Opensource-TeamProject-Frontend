@@ -9,7 +9,6 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
-    if: hashFiles('Opensource-TeamProject-Frontend-develop/package.json') != ''
 
     steps:
       - name: Checkout Repository
