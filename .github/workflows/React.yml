@@ -21,12 +21,9 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-        working-directory: Opensource-TeamProject-Frontend-develop
 
       - name: Build Project
-        run: CI=false npm run build --if-present
-        working-directory: Opensource-TeamProject-Frontend-develop
+        run: CI=false npm run build
 
       - name: Run Tests
         run: npm test --if-present -- --watchAll=false
-        working-directory: Opensource-TeamProject-Frontend-develop
