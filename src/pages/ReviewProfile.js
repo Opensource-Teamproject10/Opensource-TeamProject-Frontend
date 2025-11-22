@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 
 // restaurantApi가 axios 역할을 대신함
 import { api } from "../api/restaurantApi";
+import { useNavigate } from "react-router-dom";
+
 
 // 이미지들
 import profileImg from "../images/profile-1.png";
@@ -10,13 +12,18 @@ import reviewsIcon from "../images/reviews.png";
 import likesIcon from "../images/likes.png";
 import trustIcon from "../images/trust.png";
 
+
 import medalBronze from "../images/bronze.png";
 import medalSilver from "../images/sliver.png";
 import medalGold from "../images/gold.png";
 import medalPlatinum from "../images/platinum.png";
+import restaurantIcon from "../images/restaurant.png";
+
 
 export const ElementMainScreenHtml = () => {
   const [data, setData] = useState(null);
+  const navigate = useNavigate();   // ← 이거 없어서 에러난 거야!!
+
 
   // ---------------------------
   // API 호출
@@ -113,6 +120,25 @@ export const ElementMainScreenHtml = () => {
           </div>
 
         </div>
+
+        {/* ---------------------- 내가 간 식당 보기 ---------------------- */}
+       {/* ---------------------- 내가 간 식당 보기 ---------------------- */}
+    <div className="flex justify-center mt-10">
+     <button
+       onClick={() => navigate("/review-register")}  // ← 여기 추가!
+       className="w-full max-w-[1100px] bg-[#0057ff] hover:bg-[#0048d6] 
+               text-white py-4 rounded-xl shadow-lg flex items-center 
+               justify-center gap-3 text-[20px] font-medium transition-all"
+  >
+        <img
+         src={restaurantIcon}
+         alt="Restaurant"
+          className="w-7 h-7 object-contain"
+       />
+       내가 간 식당 보기
+     </button>
+    </div>
+
 
         {/* ---------------------- 메달 4개 ---------------------- */}
         <div className="bg-white rounded-xl shadow p-6 mt-10">
