@@ -1,17 +1,25 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import {Login} from "./pages/Login";
-import {Profile} from "./pages/Profile";
+import {Register} from "./pages/Register.js";
 import Menu from "./pages/Menu";
 import { SelectFeel } from "./pages/SelectFeel";
+import CategoryPage from "./pages/CategoryPage.jsx";
+import FoodList from "./pages/FoodList.jsx";
+import {ReviewProfile} from "./pages/ReviewProfile.js";
+import ReviewRegister from "./pages/ReviewRegister.js";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/Profile" element={<Profile />} />
-        <Route path="/Menu" element={<Menu />} />
-        <Route path="/SelectFeel" element={<SelectFeel />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/selectFeel" element={<SelectFeel />} />
+        <Route path="/category/:food" element={<CategoryPage />} />
+        <Route path="/foodlist" element={<FoodList />} />
+        <Route path="/review-profile" element={<ReviewProfile />} />
+        <Route path="/review-register" element={<ReviewRegister />} />
       </Routes>
     </Router>
   );
