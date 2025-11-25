@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react"; // useEffect 추가
+// import axios from "axios"; // ❌ 삭제 (더 이상 직접 사용하지 않음)
+import api from "../api/axiosConfig"; // ✅ 생성해둔 api 인스턴스 사용
 
 import image5 from "../images/image-5.png";
 import image17 from "../images/image-17.png";
@@ -23,68 +24,97 @@ export const SelectFeel = () => {
   const [searchValue, setSearchValue] = useState("");
   const [selectedMood, setSelectedMood] = useState(null);
   const [selectedFood, setSelectedFood] = useState(null);
+  const [userName, setUserName] = useState(""); // 사용자 이름 상태 추가
+
   const moodOptions = [
-  { id: 1, label: "행복해요", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", icon: vector6 },
-  { id: 2, label: "우울해요", bgColor: "bg-blue-100", borderColor: "border-blue-300", icon: vector7 },
-  { id: 3, label: "스트레스", bgColor: "bg-red-100", borderColor: "border-red-300", icon: vector8 },
-  { id: 4, label: "피곤해요", bgColor: "bg-gray-100", borderColor: "border-gray-300", icon: vector9 },
-  { id: 5, label: "활기차요", bgColor: "bg-orange-100", borderColor: "border-orange-300", icon: vector10 },
-  { id: 6, label: "로맨틱", bgColor: "bg-pink-100", borderColor: "border-pink-300", icon: vector11 },
-  { id: 7, label: "편안해요", bgColor: "bg-green-100", borderColor: "border-green-300", icon: vector12 },
-  { id: 8, label: "신나요!", bgColor: "bg-purple-100", borderColor: "border-purple-300", icon: vector13 },
-];
+    { id: 1, label: "행복해요", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", icon: vector6 },
+    { id: 2, label: "우울해요", bgColor: "bg-blue-100", borderColor: "border-blue-300", icon: vector7 },
+    { id: 3, label: "스트레스", bgColor: "bg-red-100", borderColor: "border-red-300", icon: vector8 },
+    { id: 4, label: "피곤해요", bgColor: "bg-gray-100", borderColor: "border-gray-300", icon: vector9 },
+    { id: 5, label: "활기차요", bgColor: "bg-orange-100", borderColor: "border-orange-300", icon: vector10 },
+    { id: 6, label: "로맨틱", bgColor: "bg-pink-100", borderColor: "border-pink-300", icon: vector11 },
+    { id: 7, label: "편안해요", bgColor: "bg-green-100", borderColor: "border-green-300", icon: vector12 },
+    { id: 8, label: "신나요!", bgColor: "bg-purple-100", borderColor: "border-purple-300", icon: vector13 },
+  ];
 
-const foodOptions = [
-  { id: 1, label: "한식", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", image: image17 },
-  { id: 2, label: "중식", bgColor: "bg-pink-100", borderColor: "border-pink-300", image: image18 },
-  { id: 3, label: "일식", bgColor: "bg-red-100", borderColor: "border-red-300", image: image19 },
-  { id: 4, label: "양식", bgColor: "bg-green-100", borderColor: "border-green-300", image: image20 },
-  { id: 5, label: "디저트", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", image: image1 },
-];
-const handleSearch = () => {
-  if (!searchValue) {
-    alert("지역을 입력하세요!");
-    return;
-  }
-  navigate('/Menu');
-  // axios
-  //   .post("http://localhost:8081/api/location", { location: searchValue })
-  //   .then(() => {
-  //     console.log("✅ 지역 저장 완료:", searchValue);
-  //     alert("✅ 입력되었습니다!");   // ✅ 여기 추가
-      
-  //   })
-    
-    // .catch((err) => {
-    //   console.error("❌ 지역 저장 실패", err);
-    //   alert("❌ 저장 실패! 다시 시도해주세요.");
-    // });
-};
+  const foodOptions = [
+    { id: 1, label: "한식", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", image: image17 },
+    { id: 2, label: "중식", bgColor: "bg-pink-100", borderColor: "border-pink-300", image: image18 },
+    { id: 3, label: "일식", bgColor: "bg-red-100", borderColor: "border-red-300", image: image19 },
+    { id: 4, label: "양식", bgColor: "bg-green-100", borderColor: "border-green-300", image: image20 },
+    { id: 5, label: "디저트", bgColor: "bg-yellow-100", borderColor: "border-yellow-300", image: image1 },
+  ];
 
-  const trySaveMoodAndFood = () => {
-    if (!selectedMood || !selectedFood) return;
+  // ✅ 페이지 로드 시 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get("/api/user/me");
+        setUserName(response.data.name); // 가져온 이름 설정
+      } catch (err) {
+        console.error("사용자 정보를 불러오는데 실패했습니다.", err);
+        // 필요 시 로그인 페이지로 리다이렉트 등의 처리
+      }
+    };
+    fetchUserData();
+  }, []);
 
+  // ✅ 기분과 음식이 모두 선택되었을 때 자동으로 서버에 저장
+  // (useEffect를 사용해야 방금 선택한 최신 state값으로 요청을 보낼 수 있습니다)
+  useEffect(() => {
+    if (selectedMood && selectedFood) {
+        trySaveMoodAndFood();
+    }
+  }, [selectedMood, selectedFood]); // selectedMood나 selectedFood가 바뀔 때마다 실행
+
+  const handleSearch = () => {
+    if (!searchValue) {
+      alert("지역을 입력하세요!");
+      return;
+    }
+    // (나중에 지역 저장 API가 생기면 여기서 api.post 호출)
+    console.log("검색 실행:", searchValue);
+    navigate('/Menu');
+  };
+
+  const trySaveMoodAndFood = async () => {
+    // 선택된 ID를 이용해 라벨(텍스트) 찾기
     const moodLabel = moodOptions.find((m) => m.id === selectedMood)?.label;
     const foodLabel = foodOptions.find((f) => f.id === selectedFood)?.label;
 
-    axios
-      .post("http://localhost:8081/api/mood", {
-        feeling: moodLabel,
-        food: foodLabel,
-        location: searchValue,
-      })
-      .then(() => console.log(`✅ 저장 완료: ${moodLabel}, ${foodLabel}, ${searchValue}`))
-      // .catch((err) => console.error("❌ 저장 실패", err));
+    if (!moodLabel || !foodLabel) return;
+
+    try {
+      // ✅ JWT 토큰을 사용하는 api 인스턴스로 변경
+      // 1. URL: /api/user/profile (UserController에 정의된 엔드포인트)
+      // 2. Payload: DTO 필드명에 맞춰 'mood', 'foodType'으로 전송
+      await api.post("/api/user/profile", {
+        mood: moodLabel,
+        foodType: foodLabel,
+        // (참고: 현재 UserController의 /profile은 location을 저장하지 않습니다. 
+        // 필요하다면 백엔드 UserProfileDto와 Entity에 location 필드를 추가해야 합니다.)
+      });
+
+      console.log(`✅ 저장 완료: ${moodLabel}, ${foodLabel}`);
+      
+    } catch (err) {
+      console.error("❌ 저장 실패", err);
+      // 401 에러 등은 api.js 인터셉터나 Login 페이지 리다이렉트로 처리됨
+    }
   };
 
   const handleMoodSelect = (mood) => {
     setSelectedMood(mood.id);
-    trySaveMoodAndFood();
+    // 여기서 바로 trySave...를 호출하면 안 됩니다 (state 반영 전이라 이전 값이 전송됨)
+    // 대신 위의 useEffect가 변화를 감지하고 실행합니다.
   };
 
   const handleFoodSelect = (food) => {
     setSelectedFood(food.id);
-    trySaveMoodAndFood();
+  };
+
+  const handleProfile = () => {
+    navigate("/review-profile"); // 프로필 페이지로 이동
   };
 
   return (
@@ -98,8 +128,8 @@ const handleSearch = () => {
 
           <div className="flex gap-6 items-center">
             <button className="text-[#faf5e9]">서비스 흐름</button>
-            <div className="text-[#faf5e9]">김민수님</div>
-            <div className="w-8 h-8 border border-[#faf5e9] rounded-full"></div>
+            <div className="text-[#faf5e9]">{userName || "사용자"}님</div>
+            <div className="w-8 h-8 border border-[#faf5e9] rounded-full" onClick={handleProfile}></div>
           </div>
         </div>
       </header>
@@ -107,7 +137,7 @@ const handleSearch = () => {
       <div className="flex justify-center mt-10 px-3">
         <div className="w-full max-w-[1100px] space-y-16">
 
-          {/* ✅ 검색 버튼: location 저장 */}
+          {/* ✅ 검색 섹션 */}
           <section className="bg-white border rounded-2xl shadow p-8">
             <h2 className="text-[#b69f7c] text-xl font-bold mb-4">어디서 식사하실 건가요?</h2>
             <div className="flex gap-3">
