@@ -31,11 +31,17 @@ export default function CategoryPage() {
   const [index, setIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // 좋아요 상태 (리뷰 개수마다 개별 관리)
+  const [likes, setLikes] = useState({});
+
+  const toggleLike = (i) => {
+    setLikes((prev) => ({ ...prev, [i]: !prev[i] }));
+  };
+
   const current = restaurants[index];
   const prev = index > 0 ? restaurants[index - 1] : null;
   const next = index < restaurants.length - 1 ? restaurants[index + 1] : null;
 
-  // 이동 함수
   const goNext = () => {
     if (index < restaurants.length - 1) {
       setIsFlipped(false);
@@ -50,7 +56,6 @@ export default function CategoryPage() {
     }
   };
 
-  // 키보드 조작
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "ArrowRight") goNext();
@@ -68,7 +73,7 @@ export default function CategoryPage() {
 
   return (
     <div className="bg-[#F7F3E7] min-h-screen py-10">
-      {/* 상단 배너 */}
+
       <div className="mx-auto w-[90%] md:w-[80%] bg-[#E6D2A9] py-10 rounded-3xl text-center shadow-md">
         <div className="text-4xl font-bold text-[#6D5535] mb-3">
           치킨 맛집 추천!
@@ -78,10 +83,8 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* 카드 영역 */}
       <div className="relative w-full flex justify-center mt-14">
 
-        {/* 왼쪽 흐릿한 카드 */}
         {prev && (
           <div className="absolute left-[10%] top-10 w-[300px] opacity-30 blur-sm scale-[0.85]">
             <img src={prev.image} className="w-full h-64 object-cover rounded-t-2xl" />
@@ -92,10 +95,7 @@ export default function CategoryPage() {
         )}
 
         {/* 메인 카드 */}
-        <div
-          className="relative z-10 w-[420px] h-[620px]"
-          style={{ perspective: "1000px" }}
-        >
+        <div className="relative z-10 w-[420px] h-[620px]" style={{ perspective: "1000px" }}>
           <div
             className="w-full h-full transition-transform duration-500"
             style={{
@@ -103,14 +103,15 @@ export default function CategoryPage() {
               transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
             }}
           >
+
             {/* 앞면 */}
             <div
               className="absolute w-full h-full bg-white rounded-3xl shadow-xl overflow-hidden"
               style={{ backfaceVisibility: "hidden" }}
             >
               <img src={current.image} className="w-full h-64 object-cover" />
-
               <div className="p-6">
+
                 <h2 className="text-2xl font-bold mb-1 text-[#5A4530]">{current.name}</h2>
                 <p className="text-gray-600 text-sm mb-3">{current.address}</p>
 
@@ -122,10 +123,7 @@ export default function CategoryPage() {
 
                 <div className="flex gap-2 mb-4">
                   {current.tags.map((t, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-[#F3E6C5] px-3 py-1 rounded-full text-sm text-[#6D5535]"
-                    >
+                    <span key={idx} className="bg-[#F3E6C5] px-3 py-1 rounded-full text-sm text-[#6D5535]">
                       {t}
                     </span>
                   ))}
@@ -149,7 +147,7 @@ export default function CategoryPage() {
               </div>
             </div>
 
-            {/* 뒷면 */}
+            {/* 뒷면 = 리뷰 + 좋아요 버튼 */}
             <div
               className="absolute w-full h-full bg-white rounded-3xl shadow-xl p-6"
               style={{
@@ -161,7 +159,17 @@ export default function CategoryPage() {
 
               <ul className="text-gray-700 leading-relaxed mb-6">
                 {current.reviewText.map((r, i) => (
-                  <li key={i}>• {r}</li>
+                  <li key={i} className="flex justify-between items-center mb-2">
+                    <span>• {r}</span>
+
+                    {/* 좋아요 버튼 */}
+                    <button
+                      onClick={() => toggleLike(i)}
+                      className="text-xl active:scale-90 transition"
+                    >
+                      {likes[i] ? "❤️" : "🤍"}
+                    </button>
+                  </li>
                 ))}
               </ul>
 
@@ -172,10 +180,10 @@ export default function CategoryPage() {
                 돌아가기
               </button>
             </div>
+
           </div>
         </div>
 
-        {/* 오른쪽 흐릿한 카드 */}
         {next && (
           <div className="absolute right-[10%] top-10 w-[300px] opacity-30 blur-sm scale-[0.85]">
             <img src={next.image} className="w-full h-64 object-cover rounded-t-2xl" />
@@ -184,9 +192,10 @@ export default function CategoryPage() {
             </div>
           </div>
         )}
+
       </div>
 
-      {/* 이전/다음 버튼 */}
+      {/* 이전 / 다음 버튼 */}
       <div className="flex justify-center gap-10 mt-16">
         <button
           onClick={goPrev}
@@ -202,6 +211,7 @@ export default function CategoryPage() {
           다음 →
         </button>
       </div>
+
     </div>
   );
 }
