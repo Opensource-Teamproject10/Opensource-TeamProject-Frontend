@@ -33,41 +33,52 @@ export const Login = () => {
     { icon: image, text: "실시간 맛집 정보" },
   ];
 // --- (수정 2) handleLogin이 event 객체 'e'를 받도록 수정 ---
-  const handleLogin = async (e) => {
-    // --- (수정 3) 페이지 새로고침(기본 동작) 방지 ---
-    e.preventDefault(); 
-    try {
-        // --- (수정 4) 'axios.post' -> 'api.post'로 변경 ---
-        // 'api' 인스턴스에 baseURL("http://localhost:8081")이 설정되어 있으므로
-        // URL 경로만 적어줍니다.
-        const response = await api.post("/api/user/login", {
-          email,    
-          password, 
-        });
+const handleLogin = async (e) => {
+  e.preventDefault();
 
-        // 3. 응답 데이터에서 'token'을 추출합니다.
-        const { token } = response.data;
+  try {
+    const response = await api.post("/api/user/login", {
+      email,
+      password,
+    });
 
-        if (token) {
-            // 4. 토큰을 localStorage에 저장합니다.
-            localStorage.setItem("token", token);
-            
-            alert("로그인 성공!");
-            navigate("/SelectFeel"); // 메인 페이지로 이동
-        }
+    console.log("🔥 서버 로그인 응답:", response.data);
 
-    } catch (error) {
-        console.error("Login error: ", error);
-        
-        // 5. 서버에서 보낸 에러 메시지를 표시합니다.
-        if (error.response && error.response.status === 401) {
-            // (401은 저희가 백엔드에서 설정한 "Unauthorized"입니다)
-            alert(error.response.data); // "이메일 또는 비밀번호가 일치하지 않습니다."
-        } else {
-            alert("로그인에 실패했습니다.");
-        }
+    // 서버 응답에서 토큰 및 유저ID를 자동으로 추출
+    const token =
+      response.data.token ||
+      response.data.accessToken ||
+      response.data.jwt ||
+      response.data.authToken ||
+      null;
+
+    const userId =
+      response.data.userId ||
+      response.data.id ||
+      response.data.user?.id ||
+      null;
+
+    console.log("🔥 token:", token);
+    console.log("🔥 userId:", userId);
+
+    if (token && userId) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
+
+      alert("로그인 성공!");
+      navigate("/SelectFeel");
+    } else {
+      alert("⚠️ 서버 응답에 token 또는 userId가 없습니다.");
+      console.error("응답 내용:", response.data);
     }
-  };
+
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("로그인 실패! 이메일 또는 비밀번호가 잘못되었습니다.");
+  }
+};
+
+
 
   const handleSignup = () => {
     navigate("/Register"); // 회원가입 페이지로 이동
@@ -194,8 +205,8 @@ export const Login = () => {
             <header className="w-full border-b pb-4 mb-6">
               <div className="flex items-center gap-2">
                 <img className="w-6 h-6" alt="Login icon" src={image1} />
-                <h2 className="text-black text-2xl [font-family:'Roboto-Bold',Helvetica] font-bold">
-                  로그인
+                <h2 className="text-[#FBF4E4] text-2xl [font-family:'Roboto-Bold',Helvetica] font-bold">
+                로그인
                 </h2>
               </div>
               <p className="mt-2 [font-family:'Roboto-Regular',Helvetica] font-normal text-gray-500 text-sm">
@@ -262,77 +273,31 @@ export const Login = () => {
               </div>
             </button>
 
-            {/* --- 로그인 버튼 --- */}
-            <button
-              type="submit"
-              className="all-[unset] box-border flex items-center justify-center bg-[#fbf6ec] w-full h-10 rounded-md cursor-pointer [font-family:'Roboto-Medium',Helvetica] font-medium text-[#b59f7e] text-base"
-              // onClick={handleLogin}
-            >
-              로그인
-            </button>
+          {/* --- 로그인 버튼 --- */}
+<button
+  type="submit"
+  className="all-[unset] box-border flex items-center justify-center bg-[#fbf6ec] w-full h-10 rounded-md cursor-pointer [font-family:'Roboto-Medium',Helvetica] font-medium text-[#b59f7e] text-base"
+>
+  로그인
+</button>
 
-            {/*--- "또는" 구분선 ---*/}
-            <div className="flex items-center justify-center gap-2 my-4">
-              <div className="flex-1 border-t border-gray-400"></div>
-              <div className="[font-family:'Roboto-Regular',Helvetica] font-normal text-gray-500 text-sm">
-                또는
-              </div>
-              <div className="flex-1 border-t border-gray-400"></div>
-            </div>
+{/* 회원가입 안내 */}
+<div className="[font-family:'Roboto-Regular',Helvetica] font-normal text-gray-600 text-sm text-center mt-6 mb-2">
+  아직 계정이 없으신가요?
+</div>
 
-            {/*--- 소셜 로그인 텍스트 ---*/}
-            <div className="[font-family:'Roboto-Regular',Helvetica] font-normal text-gray-500 text-sm text-center mb-4">
-              소셜 계정으로 로그인
-            </div>
+{/* --- 회원가입 버튼 --- */}
+<button
+  type="button"
+  onClick={handleSignup}
+  className="all-[unset] box-border bg-white border border-solid border-gray-300 w-full h-10 rounded-md cursor-pointer flex items-center justify-center gap-2"
+>
+  <img className="w-4 h-4" alt="Signup icon" src={vector8} />
+  <div className="[font-family:'Roboto-Medium',Helvetica] font-medium text-black text-base">
+    회원가입
+  </div>
+</button>
 
-            {/*--- Google 로그인 버튼 ---*/}
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="all-[unset] box-border bg-white border border-solid border-gray-300 w-full h-10 rounded-md cursor-pointer flex items-center justify-center gap-2 mb-2"
-            >
-              <img src={vector4} alt="Google Logo" className="w-5 h-5" />
-              <div className="[font-family:'Roboto-Medium',Helvetica] font-medium text-black text-base">
-                Google로 계속하기
-              </div>
-            </button>
-
-            {/*--- Kakao 로그인 버튼 ---*/}
-            <button
-              type="button"
-              onClick={handleKakaoLogin}
-              className="all-[unset] box-border bg-white border border-solid border-gray-300 w-full h-10 rounded-md cursor-pointer flex items-center justify-center gap-2"
-            >
-              <div className="w-5 h-5 flex items-center justify-center bg-yellow-400 rounded">
-                <div className="[font-family:'Roboto-Bold',Helvetica] font-bold text-black text-xs">
-                  K
-                </div>
-              </div>
-              <div className="[font-family:'Roboto-Medium',Helvetica] font-medium text-black text-base">
-                Kakao로 계속하기
-              </div>
-            </button>
-
-            {/*--- 회원가입 텍스트 ---*/}
-            <div className="[font-family:'Roboto-Regular',Helvetica] font-normal text-gray-600 text-sm text-center mt-6 mb-2">
-              아직 계정이 없으신가요?
-            </div>
-
-            {/* --- 회원가입 버튼 --- */}
-            <button
-              type="button"
-              onClick={handleSignup}
-              className="all-[unset] box-border bg-white border border-solid border-gray-300 w-full h-10 rounded-md cursor-pointer flex items-center justify-center gap-2"
-            >
-              <img
-                className="w-4 h-4"
-                alt="Signup icon"
-                src={vector8}
-              />
-              <div className="[font-family:'Roboto-Medium',Helvetica] font-medium text-black text-base">
-                회원가입
-              </div>
-            </button>
           </form>
           <footer className="self-center mt-6 [font-family:'Roboto-Regular',Helvetica] font-normal text-gray-500 text-sm">
             무드푸드 © 2025
