@@ -1,216 +1,267 @@
 import React, { useState, useEffect } from "react";
-
-const restaurants = [
-  {
-    id: 1,
-    name: "홍대 아웃닭",
-    address: "서울 마포구 와우산로17길 19 1층 아웃닭",
-    stars: 4.8,
-    reviews: 30,
-    tags: ["행복해요", "분위기좋음"],
-    reviewText: ["맛있어요!", "튀김이 바삭해요!", "재방문 의사 있음"],
-    placeId: "22353150",
-    image:
-      "https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20200919_244%2F16005035490394UuGt_JPEG%2FGq_DyoWdEpKHdMI9tkvyCZsM.jpeg.jpg",
-  },
-  {
-    id: 2,
-    name: "이나닭강정 신촌직영점",
-    address: "서울 서대문구 신촌로 57 1층",
-    stars: 4.6,
-    reviews: 43,
-    tags: ["행복해요", "분위기좋음"],
-    reviewText: ["양이 많아요!", "달콤하고 맛있음!", "강추합니다!"],
-    placeId: "22353150",
-    image:
-      "https://ldb-phinf.pstatic.net/20250102_190/1735827922045mfwKf_JPEG/KakaoTalk_20250102_232236911.jpg",
-  },
-];
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../api/axiosConfig";
 
 export default function CategoryPage() {
+  const { foodType } = useParams();
+  const navigate = useNavigate();
+
+  const [restaurants, setRestaurants] = useState([]);
   const [index, setIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // 좋아요 상태 (리뷰 개수마다 개별 관리)
-  const [likes, setLikes] = useState({});
+  const sampleReviews = [
+    "여기 진짜 맛있어요! 또 오고 싶어요 😊",
+    "양도 많고 가격도 괜찮아요!",
+    "직원분들이 너무 친절했습니다.",
+    "가게 분위기가 좋아요!",
+    "기대했던 것보다 훨씬 맛있어요!",
+    "조금 짰지만 전체적으로 만족!",
+    "웨이팅 있었지만 금방 들어갔어요.",
+    "재료가 신선해서 좋았어요.",
+    "평범했지만 괜찮았어요.",
+    "맛있지만 가격이 살짝 비싸요.",
+    "다음에 또 방문할 의향 있어요!",
+    "메뉴가 다양해서 선택 폭이 넓어요.",
+    "사진보다 훨씬 맛있어요!",
+    "포장도 잘 해주시고 맛도 좋아요.",
+    "혼밥하기 딱 좋아요!",
+    "매운맛 lovers 강추🔥",
+    "가성비 최고!",
+    "데이트 코스로 강력 추천 ❤️",
+    "단골집 예약!",
+    "친구랑 가기 좋아요!"
+  ];
 
-  const toggleLike = (i) => {
-    setLikes((prev) => ({ ...prev, [i]: !prev[i] }));
+  const [randomReviews, setRandomReviews] = useState([]);
+  const [likedReviews, setLikedReviews] = useState([false, false, false]);
+  const [restaurantLiked, setRestaurantLiked] = useState(false);
+
+  /* 🔥 맛집 추천 API */
+  const fetchRestaurants = async () => {
+    try {
+      const userRes = await api.get("/api/user/me");
+      const userId = userRes.data.id;
+      const region = userRes.data.region ?? "강남";
+      const mood = userRes.data.mood ?? "기본";
+
+      const res = await api.get("/api/recommend/restaurants", {
+        params: { userId, region, food: foodType, mood },
+      });
+
+      setRestaurants(res.data);
+      setIndex(0);
+    } catch (err) {
+      console.error("❌ 맛집 불러오기 실패:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const current = restaurants[index];
-  const prev = index > 0 ? restaurants[index - 1] : null;
-  const next = index < restaurants.length - 1 ? restaurants[index + 1] : null;
+  useEffect(() => {
+    fetchRestaurants();
+  }, [foodType]);
+
+  /* 카드 변경 → 리뷰 갱신 */
+  useEffect(() => {
+    if (!restaurants[index]) return;
+
+    const shuffled = [...sampleReviews].sort(() => 0.5 - Math.random());
+    setRandomReviews(shuffled.slice(0, 3));
+    setLikedReviews([false, false, false]);
+    setRestaurantLiked(false);
+  }, [index, restaurants]);
+
+  const toggleLike = async (idx) => {
+    const user = await api.get("/api/user/me");
+    const userId = user.data.id;
+    const restaurantId = restaurants[index].id;
+
+    const updated = [...likedReviews];
+    updated[idx] = !updated[idx];
+    setLikedReviews(updated);
+
+    if (restaurantLiked) return;
+
+    try {
+      await api.post("/api/review-likes", {
+        userId,
+        restaurantId,
+        reviewText: randomReviews[idx],
+        likedIndex: idx,
+      });
+      setRestaurantLiked(true);
+    } catch (err) {
+      console.error("❌ 좋아요 저장 실패:", err);
+    }
+  };
 
   const goNext = () => {
     if (index < restaurants.length - 1) {
       setIsFlipped(false);
-      setIndex(index + 1);
+      setIndex((prev) => prev + 1);
     }
   };
 
   const goPrev = () => {
     if (index > 0) {
       setIsFlipped(false);
-      setIndex(index - 1);
+      setIndex((prev) => prev - 1);
     }
   };
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key.toLowerCase() === "r") setIsFlipped((prev) => !prev);
-
-      if (e.key === " " || e.key === "Spacebar") {
-        window.location.href = `https://place.map.kakao.com/${current.placeId}`;
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [index]);
+  const current = restaurants[index];
+  const prevCard = index > 0 ? restaurants[index - 1] : null;
+  const nextCard = index < restaurants.length - 1 ? restaurants[index + 1] : null;
 
   return (
-    <div className="bg-[#F7F3E7] min-h-screen py-10">
+    <div className="bg-[#F7F3E7] min-h-screen py-10 relative">
 
-      <div className="mx-auto w-[90%] md:w-[80%] bg-[#E6D2A9] py-10 rounded-3xl text-center shadow-md">
-        <div className="text-4xl font-bold text-[#6D5535] mb-3">
-          치킨 맛집 추천!
-        </div>
-        <div className="text-lg text-gray-700">
-          감정에 맞는 최적의 맛집을 준비했어요.
-        </div>
+      {/* 뒤로가기 */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-6 left-6 px-4 py-2 bg-[#C8B28A] text-white rounded-xl shadow z-50"
+      >
+        ← 뒤로가기
+      </button>
+
+      {/* 헤더 */}
+      <div className="mx-auto w-[90%] md:w-[80%] bg-[#E6D2A9] py-8 rounded-3xl text-center shadow-md">
+        <h1 className="text-4xl font-bold text-[#6D5535] mb-2">
+          {foodType} 맛집 추천!
+        </h1>
+        <p className="text-lg text-gray-700">
+          감정과 취향에 맞는 최적의 맛집을 준비했어요.
+        </p>
       </div>
 
-      <div className="relative w-full flex justify-center mt-14">
+      {/* 로딩 */}
+      {loading && <div className="text-center text-xl py-20">로딩 중...</div>}
 
-        {prev && (
-          <div className="absolute left-[10%] top-10 w-[300px] opacity-30 blur-sm scale-[0.85]">
-            <img src={prev.image} className="w-full h-64 object-cover rounded-t-2xl" />
-            <div className="bg-white rounded-b-2xl shadow-md p-5">
-              <h3 className="font-semibold text-gray-600">{prev.name}</h3>
+      {/* 데이터 없음 */}
+      {!loading && restaurants.length === 0 && (
+        <div className="text-center text-xl py-20 text-gray-600">
+          😥 {foodType} 관련 맛집을 찾지 못했습니다.
+        </div>
+      )}
+
+      {!loading && restaurants.length > 0 && (
+        <div className="mt-10 flex justify-center gap-8 items-center">
+
+          {/* 이전 카드 */}
+          {prevCard && (
+            <div className="w-[260px] opacity-40 scale-90 blur-[1px]">
+              <img src={prevCard.imageUrl} className="w-full h-44 object-cover rounded-t-2xl" />
+              <div className="bg-white rounded-b-2xl p-3 text-center text-sm">
+                {prevCard.name}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 메인 카드 */}
-        <div className="relative z-10 w-[420px] h-[620px]" style={{ perspective: "1000px" }}>
-          <div
-            className="w-full h-full transition-transform duration-500"
-            style={{
-              transformStyle: "preserve-3d",
-              transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-            }}
-          >
-
-            {/* 앞면 */}
+          {/* 현재 카드 */}
+          <div className="w-[380px] min-h-[500px]" style={{ perspective: "1000px" }}>
             <div
-              className="absolute w-full h-full bg-white rounded-3xl shadow-xl overflow-hidden"
-              style={{ backfaceVisibility: "hidden" }}
+              className="w-full h-full transition-transform duration-500"
+              style={{
+                transformStyle: "preserve-3d",
+                transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+              }}
             >
-              <img src={current.image} className="w-full h-64 object-cover" />
-              <div className="p-6">
 
-                <h2 className="text-2xl font-bold mb-1 text-[#5A4530]">{current.name}</h2>
-                <p className="text-gray-600 text-sm mb-3">{current.address}</p>
+              {/* 앞면 */}
+              <div className="absolute w-full min-h-[500px] bg-white rounded-3xl shadow-xl overflow-hidden"
+                style={{ backfaceVisibility: "hidden" }}>
+                <img src={current.imageUrl} className="w-full h-56 object-cover" />
 
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-yellow-500 text-xl">⭐</div>
-                  <div className="font-semibold text-[#5A4530]">{current.stars}점</div>
-                  <div className="text-gray-500 text-sm">({current.reviews} 리뷰)</div>
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold mb-1 text-[#5A4530]">{current.name}</h2>
+                  <p className="text-gray-600 text-sm mb-4">{current.address}</p>
+
+                  <button
+                    onClick={() => window.open(current.placeUrl || current.mapUrl, "_blank")}
+                    className="w-full mb-3 bg-[#6D5535] text-white py-3 rounded-xl"
+                  >
+                    📍 상세 보기
+                  </button>
+
+                  <button
+                    className="w-full bg-[#A58963] text-white py-3 rounded-xl"
+                    onClick={() => setIsFlipped(true)}
+                  >
+                    리뷰 보기 (R)
+                  </button>
                 </div>
+              </div>
 
-                <div className="flex gap-2 mb-4">
-                  {current.tags.map((t, idx) => (
-                    <span key={idx} className="bg-[#F3E6C5] px-3 py-1 rounded-full text-sm text-[#6D5535]">
-                      {t}
-                    </span>
+              {/* 뒷면 */}
+              <div className="absolute w-full min-h-[500px] bg-white rounded-3xl shadow-xl p-6"
+                style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}>
+                <h2 className="text-2xl font-bold text-[#5A4530] mb-4">리뷰</h2>
+
+                <ul className="space-y-4">
+                  {randomReviews.map((review, idx) => (
+                    <li key={idx} className="flex justify-between items-center">
+                      <span>• {review}</span>
+                      <button
+                        onClick={() => toggleLike(idx)}
+                        className="text-2xl select-none"
+                      >
+                        {likedReviews[idx] ? "❤️" : "🤍"}
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
 
                 <button
-                  className="w-full bg-[#A58963] text-white py-3 rounded-xl mt-2 hover:bg-[#8F744F]"
-                  onClick={() => setIsFlipped(true)}
+                  className="w-full mt-5 bg-[#A58963] text-white py-3 rounded-xl"
+                  onClick={() => setIsFlipped(false)}
                 >
-                  리뷰 보기 (R)
-                </button>
-
-                <button
-                  className="w-full bg-[#C9B89A] text-[#5A4530] py-3 rounded-xl mt-3 hover:bg-[#BCA987]"
-                  onClick={() =>
-                    (window.location.href = `https://place.map.kakao.com/${current.placeId}`)
-                  }
-                >
-                  상세정보 보기 (Space)
+                  돌아가기
                 </button>
               </div>
             </div>
-
-            {/* 뒷면 = 리뷰 + 좋아요 버튼 */}
-            <div
-              className="absolute w-full h-full bg-white rounded-3xl shadow-xl p-6"
-              style={{
-                transform: "rotateY(180deg)",
-                backfaceVisibility: "hidden",
-              }}
-            >
-              <h2 className="text-2xl font-bold text-[#5A4530] mb-3">리뷰</h2>
-
-              <ul className="text-gray-700 leading-relaxed mb-6">
-                {current.reviewText.map((r, i) => (
-                  <li key={i} className="flex justify-between items-center mb-2">
-                    <span>• {r}</span>
-
-                    {/* 좋아요 버튼 */}
-                    <button
-                      onClick={() => toggleLike(i)}
-                      className="text-xl active:scale-90 transition"
-                    >
-                      {likes[i] ? "❤️" : "🤍"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                className="w-full bg-[#A58963] text-white py-3 rounded-xl hover:bg-[#8F744F]"
-                onClick={() => setIsFlipped(false)}
-              >
-                돌아가기
-              </button>
-            </div>
-
           </div>
+
+          {/* ⭐ 다음 카드 */}
+{nextCard && (
+  <div
+    className={`
+      w-[260px] opacity-40 scale-90 blur-[1px] transition-all
+      ${index === 0 ? "translate-x-20" : ""}
+    `}
+  >
+    <img
+      src={nextCard.imageUrl}
+      className="w-full h-44 object-cover rounded-t-2xl"
+    />
+    <div className="bg-white rounded-b-2xl p-3 text-center text-sm">
+      {nextCard.name}
+    </div>
+  </div>
+)}
+
+
         </div>
-
-        {next && (
-          <div className="absolute right-[10%] top-10 w-[300px] opacity-30 blur-sm scale-[0.85]">
-            <img src={next.image} className="w-full h-64 object-cover rounded-t-2xl" />
-            <div className="bg-white rounded-b-2xl shadow-md p-5">
-              <h3 className="font-semibold text-gray-600">{next.name}</h3>
-            </div>
-          </div>
-        )}
-
-      </div>
+      )}
 
       {/* 이전 / 다음 버튼 */}
-      <div className="flex justify-center gap-10 mt-16">
-        <button
-          onClick={goPrev}
-          className="px-6 py-3 text-lg bg-[#E6DCC7] text-[#6D5535] rounded-xl shadow hover:bg-[#D9CDB6]"
-        >
-          ← 이전
-        </button>
-
-        <button
-          onClick={goNext}
-          className="px-6 py-3 text-lg bg-[#E6DCC7] text-[#6D5535] rounded-xl shadow hover:bg-[#D9CDB6]"
-        >
-          다음 →
-        </button>
-      </div>
+      {!loading && restaurants.length > 0 && (
+        <div className="flex justify-center gap-10 mt-10 mb-10">
+          <button
+            onClick={goPrev}
+            className="px-6 py-3 bg-[#E6DCC7] text-[#6D5535] rounded-xl shadow"
+          >
+            ← 이전
+          </button>
+          <button
+            onClick={goNext}
+            className="px-6 py-3 bg-[#E6DCC7] text-[#6D5535] rounded-xl shadow"
+          >
+            다음 →
+          </button>
+        </div>
+      )}
 
     </div>
   );

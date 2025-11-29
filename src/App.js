@@ -16,7 +16,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/selectFeel" element={<SelectFeel />} />
-        <Route path="/category/:food" element={<CategoryPage />} />
+       <Route path="/category/:foodType" element={<CategoryPage />} />
         <Route path="/foodlist" element={<FoodList />} />
         <Route path="/review-profile" element={<ReviewProfile />} />
         <Route path="/review-register" element={<ReviewRegister />} />
